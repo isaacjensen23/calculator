@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="FlightData">
+  <title>Flight Data Sheet Calculator</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #cbd5e1;
+      --text: #0f172a;
+      --muted: #64748b;
+      --accent: #0284c7;
+      --buffer-bg: #eff6ff;
+      --buffer-border: #93c5fd;
+    }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; }
+    body { background-color: var(--bg); color: var(--text); padding: 12px; font-size: 13px; }
+    .container { max-width: 900px; margin: 0 auto; background: var(--card-bg); border: 2px solid #000; padding: 14px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+    h1 { font-size: 16px; text-transform: uppercase; text-align: center; border-bottom: 2px solid #000; padding-bottom: 4px; margin-bottom: 10px; letter-spacing: 1px; }
+    .section-title { font-weight: 700; font-size: 12px; text-transform: uppercase; background: #e2e8f0; padding: 3px 6px; border: 1px solid #000; margin-top: 10px; margin-bottom: 6px; }
+    .grid { display: grid; gap: 6px; }
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+    .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+    .field { display: flex; flex-direction: column; }
+    label { font-size: 10px; font-weight: 600; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
+    input, select, textarea { border: 1px solid var(--border); padding: 5px 6px; font-size: 13px; border-radius: 3px; background: #fff; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); ring: 1px solid var(--accent); }
+    .calc-box { background: #f1f5f9; font-weight: 600; color: #1e293b; border-color: #cbd5e1; }
+    .buffer-box { background: var(--buffer-bg); border: 1px solid var(--buffer-border); color: #1d4ed8; font-weight: 700; }
+    .row { display: flex; gap: 8px; align-items: center; }
+    .flex-1 { flex: 1; }
+    .table-container { width: 100%; border-collapse: collapse; margin-top: 4px; }
+    .table-container th, .table-container td { border: 1px solid var(--border); padding: 4px 6px; text-align: left; }
+    .table-container th { background: #f8fafc; font-size: 10px; text-transform: uppercase; }
+    .hidden { display: none !important; }
+    .tag { display: inline-block; font-size: 9px; padding: 2px 4px; border-radius: 3px; font-weight: bold; background: #e0f2fe; color: #0369a1; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Flight Data Sheet</h1>
+
+  <!-- GENERAL INFO -->
+  <div class="grid grid-3">
+    <div class="field">
+      <label>Aircraft Tail (N#)</label>
+      <input type="text" placeholder="N12345">
+    </div>
+    <div class="field">
+      <label>Configuration Engine Type</label>
+      <select id="engineType" onchange="toggleEngineMode()">
+        <option value="single">Single Engine</option>
+        <option value="multi">Multi-Engine</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>NOTAMs / TFRs</label>
+      <input type="text" placeholder="Active NOTAM notes...">
+    </div>
+  </div>
+
+  <!-- DEPARTURE SECTION -->
+  <div class="section-title">Departure Airport & Conditions</div>
+  <div class="grid grid-3">
+    <div class="field">
+      <label>Surface Type</label>
+      <select>
+        <option>Hard Surface / Paved</option>
+        <option>Turf / Grass</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Condition / Grass Length</label>
+      <input type="text" placeholder="Dry / Wet / Short grass">
+    </div>
+    <div class="field">
+      <label>Takeoff Alternate</label>
+      <input type="text" placeholder="ICAO / Runway">
+    </div>
+  </div>
+
+  <table class="table-container">
+    <thead>
+      <tr>
+        <th style="width: 15%;">Rwy</th>
+        <th style="width: 15%;">Heading (°)</th>
+        <th style="width: 25%;">Dimensions (L x W)</th>
+        <th style="width: 15%;">Slope %</th>
+        <th style="width: 30%;">Wind Comp (Head / Cross)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Rwy A</strong></td>
+        <td><input type="number" id="dep_rwy_a_hdg" placeholder="e.g. 18" oninput="calculateDeparture()"></td>
+        <td><input type="text" placeholder="5000 x 75"></td>
+        <td><input type="text" placeholder="+0.2%"></td>
+        <td><input type="text" id="dep_rwy_a_wind" class="calc-box" readonly placeholder="Calculated"></td>
+      </tr>
+      <tr>
+        <td><strong>Rwy B</strong></td>
+        <td><input type="number" id="dep_rwy_b_hdg" placeholder="e.g. 36" oninput="calculateDeparture()"></td>
+        <td><input type="text" placeholder="5000 x 75"></td>
+        <td><input type="text" placeholder="-0.2%"></td>
+        <td><input type="text" id="dep_rwy_b_wind" class="calc-box" readonly placeholder="Calculated"></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- DEPARTURE WEATHER & DENSITY ALT -->
+  <div class="section-title">Departure Weather & Density Altitude</div>
+  <div class="grid grid-4">
+    <div class="field">
+      <label>Wind Dir / Speed (kts)</label>
+      <div class="row">
+        <input type="number" id="dep_wind_dir" placeholder="Dir°" oninput="calculateDeparture()">
+        <input type="number" id="dep_wind_spd" placeholder="Kts" oninput="calculateDeparture()">
+      </div>
+    </div>
+    <div class="field">
+      <label>Field Elevation (ft)</label>
+      <input type="number" id="dep_elev" placeholder="4497" oninput="calculateDeparture()">
+    </div>
+    <div class="field">
+      <label>Altimeter (inHg)</label>
+      <input type="number" step="0.01" id="dep_altim" placeholder="29.92" oninput="calculateDeparture()">
+    </div>
+    <div class="field">
+      <label>Temp (°C)</label>
+      <input type="number" id="dep_oat" placeholder="15" oninput="calculateDeparture()">
+    </div>
+  </div>
+
+  <div class="grid grid-2" style="margin-top: 6px;">
+    <div class="field">
+      <label>Pressure Altitude</label>
+      <input type="text" id="dep_press_alt" class="calc-box" readonly placeholder="--- ft">
+    </div>
+    <div class="field">
+      <label>Density Altitude</label>
+      <input type="text" id="dep_density_alt" class="calc-box" readonly placeholder="--- ft">
+    </div>
+  </div>
+
+  <!-- DEPARTURE PERFORMANCE -->
+  <div class="section-title">Departure Performance (POH Values + 50% Safety Buffers)</div>
+  <div class="grid grid-3">
+    <div class="field">
+      <label>T/O Weight (lbs)</label>
+      <input type="number" placeholder="Weight">
+    </div>
+    <div class="field">
+      <label>POH Ground Roll (ft)</label>
+      <input type="number" id="dep_to_roll" placeholder="POH Dist" oninput="updateBuffers()">
+    </div>
+    <div class="field">
+      <label>+50% Buffer Roll (ft)</label>
+      <input type="text" id="dep_to_roll_buf" class="buffer-box" readonly placeholder="+50% Dist">
+    </div>
+  </div>
+
+  <div class="grid grid-2" style="margin-top: 6px;">
+    <div class="field">
+      <label>POH 50' Obstacle Dist (ft)</label>
+      <input type="number" id="dep_50_dist" placeholder="POH 50' Dist" oninput="updateBuffers()">
+    </div>
+    <div class="field">
+      <label>+50% Buffer 50' Dist (ft)</label>
+      <input type="text" id="dep_50_dist_buf" class="buffer-box" readonly placeholder="+50% Dist">
+    </div>
+  </div>
+
+  <!-- MULTI ENGINE ONLY: ACCEL-STOP -->
+  <div class="grid grid-2 multi-field hidden" style="margin-top: 6px;">
+    <div class="field">
+      <label>POH Accel-Stop Dist (ft) <span class="tag">Multi-Engine</span></label>
+      <input type="number" id="dep_accel_stop" placeholder="POH Accel/Stop" oninput="updateBuffers()">
+    </div>
+    <div class="field">
+      <label>+50% Buffer Accel-Stop (ft)</label>
+      <input type="text" id="dep_accel_stop_buf" class="buffer-box" readonly placeholder="+50% Dist">
+    </div>
+  </div>
+
+  <!-- CLIMB RATES -->
+  <div class="grid grid-3" style="margin-top: 6px;">
+    <div class="field">
+      <label>Climb @ Vx (fpm / fpnm)</label>
+      <input type="text" placeholder="fpm / fpnm">
+    </div>
+    <div class="field">
+      <label>Climb @ Vy (fpm / fpnm)</label>
+      <input type="text" placeholder="fpm / fpnm">
+    </div>
+    <div class="field">
+      <label>Cruise Climb (fpm / fpnm)</label>
+      <input type="text" placeholder="fpm / fpnm">
+    </div>
+  </div>
+
+  <!-- V-SPEEDS & TAS -->
+  <div class="section-title">V-Speeds & True Airspeed (TAS)</div>
+  <div class="grid grid-4">
+    <div class="field"><label>Vr</label><input type="text" placeholder="KIAS"></div>
+    <div class="field"><label>Vx</label><input type="text" placeholder="KIAS"></div>
+    <div class="field"><label>Vy</label><input type="text" placeholder="KIAS"></div>
+    <div class="field"><label>Va</label><input type="text" placeholder="KIAS"></div>
+  </div>
+  <div class="grid grid-3" style="margin-top: 4px;">
+    <div class="field"><label>Vglide</label><input type="text" placeholder="KIAS"></div>
+    <div class="field"><label>Vref</label><input type="text" placeholder="KIAS"></div>
+    <div class="field"><label>Cruise Climb</label><input type="text" placeholder="KIAS"></div>
+  </div>
+
+  <!-- MULTI-ENGINE V-SPEEDS -->
+  <div class="grid grid-3 multi-field hidden" style="margin-top: 6px;">
+    <div class="field"><label>Vmc <span class="tag">Multi</span></label><input type="text" placeholder="Red Line"></div>
+    <div class="field"><label>Vyse <span class="tag">Multi</span></label><input type="text" placeholder="Blue Line"></div>
+    <div class="field"><label>Vsse <span class="tag">Multi</span></label><input type="text" placeholder="Safe Single Eng"></div>
+  </div>
+
+  <!-- ARRIVAL SECTION -->
+  <div class="section-title" style="margin-top: 14px;">Arrival Airport & Conditions</div>
+  <div class="grid grid-3">
+    <div class="field">
+      <label>Surface Type</label>
+      <select>
+        <option>Hard Surface / Paved</option>
+        <option>Turf / Grass</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Condition / Grass Length</label>
+      <input type="text" placeholder="Dry / Wet / Short grass">
+    </div>
+    <div class="field">
+      <label>Destination Alternate</label>
+      <input type="text" placeholder="ICAO / Runway">
+    </div>
+  </div>
+
+  <table class="table-container">
+    <thead>
+      <tr>
+        <th style="width: 15%;">Rwy</th>
+        <th style="width: 15%;">Heading (°)</th>
+        <th style="width: 25%;">Dimensions (L x W)</th>
+        <th style="width: 15%;">Slope %</th>
+        <th style="width: 30%;">Wind Comp (Head / Cross)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Rwy A</strong></td>
+        <td><input type="number" id="arr_rwy_a_hdg" placeholder="e.g. 13" oninput="calculateArrival()"></td>
+        <td><input type="text" placeholder="6000 x 100"></td>
+        <td><input type="text" placeholder="+0.1%"></td>
+        <td><input type="text" id="arr_rwy_a_wind" class="calc-box" readonly placeholder="Calculated"></td>
+      </tr>
+      <tr>
+        <td><strong>Rwy B</strong></td>
+        <td><input type="number" id="arr_rwy_b_hdg" placeholder="e.g. 31" oninput="calculateArrival()"></td>
+        <td><input type="text" placeholder="6000 x 100"></td>
+        <td><input type="text" placeholder="-0.1%"></td>
+        <td><input type="text" id="arr_rwy_b_wind" class="calc-box" readonly placeholder="Calculated"></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ARRIVAL WEATHER & DENSITY ALT -->
+  <div class="section-title">Arrival Weather & Density Altitude</div>
+  <div class="grid grid-4">
+    <div class="field">
+      <label>Wind Dir / Speed (kts)</label>
+      <div class="row">
+        <input type="number" id="arr_wind_dir" placeholder="Dir°" oninput="calculateArrival()">
+        <input type="number" id="arr_wind_spd" placeholder="Kts" oninput="calculateArrival()">
+      </div>
+    </div>
+    <div class="field">
+      <label>Field Elevation (ft)</label>
+      <input type="number" id="arr_elev" placeholder="Field ft" oninput="calculateArrival()">
+    </div>
+    <div class="field">
+      <label>Altimeter (inHg)</label>
+      <input type="number" step="0.01" id="arr_altim" placeholder="29.92" oninput="calculateArrival()">
+    </div>
+    <div class="field">
+      <label>Temp (°C)</label>
+      <input type="number" id="arr_oat" placeholder="15" oninput="calculateArrival()">
+    </div>
+  </div>
+
+  <div class="grid grid-2" style="margin-top: 6px;">
+    <div class="field">
+      <label>Pressure Altitude</label>
+      <input type="text" id="arr_press_alt" class="calc-box" readonly placeholder="--- ft">
+    </div>
+    <div class="field">
+      <label>Density Altitude</label>
+      <input type="text" id="arr_density_alt" class="calc-box" readonly placeholder="--- ft">
+    </div>
+  </div>
+
+  <!-- ARRIVAL PERFORMANCE -->
+  <div class="section-title">Arrival Performance (Landing Roll + 50% Safety Buffers)</div>
+  <div class="grid grid-3">
+    <div class="field">
+      <label>Landing Weight (lbs)</label>
+      <input type="number" placeholder="Weight">
+    </div>
+    <div class="field">
+      <label>POH Landing Roll (ft)</label>
+      <input type="number" id="arr_ldg_roll" placeholder="POH Roll" oninput="updateBuffers()">
+    </div>
+    <div class="field">
+      <label>+50% Buffer Roll (ft)</label>
+      <input type="text" id="arr_ldg_roll_buf" class="buffer-box" readonly placeholder="+50% Dist">
+    </div>
+  </div>
+
+  <div class="grid grid-2" style="margin-top: 6px;">
+    <div class="field">
+      <label>POH 50' Landing Dist (ft)</label>
+      <input type="number" id="arr_50_dist" placeholder="POH 50' Dist" oninput="updateBuffers()">
+    </div>
+    <div class="field">
+      <label>+50% Buffer 50' Dist (ft)</label>
+      <input type="text" id="arr_50_dist_buf" class="buffer-box" readonly placeholder="+50% Dist">
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function toggleEngineMode() {
+    const isMulti = document.getElementById('engineType').value === 'multi';
+    document.querySelectorAll('.multi-field').forEach(el => {
+      if (isMulti) {
+        el.classList.remove('hidden');
+      } else {
+        el.classList.add('hidden');
+      }
+    });
+  }
+
+  function getWindComponents(rwyHdg, windDir, windSpd) {
+    if (isNaN(rwyHdg) || isNaN(windDir) || isNaN(windSpd)) return "";
+    let rwyDeg = rwyHdg <= 36 ? rwyHdg * 10 : rwyHdg; // handles Runway 18 or 180
+    let angleDiff = (windDir - rwyDeg) * (Math.PI / 180);
+    let headwind = Math.round(windSpd * Math.cos(angleDiff));
+    let crosswind = Math.round(windSpd * Math.sin(angleDiff));
+    let hwLabel = headwind >= 0 ? `${headwind} kts HW` : `${Math.abs(headwind)} kts TW`;
+    let xwLabel = crosswind >= 0 ? `${crosswind} kts (R)` : `${Math.abs(crosswind)} kts (L)`;
+    return `${hwLabel} / ${xwLabel}`;
+  }
+
+  function getDensityAltitude(elev, altim, oat) {
+    if (isNaN(elev) || isNaN(altim) || isNaN(oat)) return { pa: "", da: "" };
+    let pa = Math.round(elev + (29.92 - altim) * 1000);
+    let isaTemp = 15 - (1.98 * (pa / 1000));
+    let da = Math.round(pa + 120 * (oat - isaTemp));
+    return { pa: `${pa} ft`, da: `${da} ft` };
+  }
+
+  function calculateDeparture() {
+    const wDir = parseFloat(document.getElementById('dep_wind_dir').value);
+    const wSpd = parseFloat(document.getElementById('dep_wind_spd').value);
+    const rwyA = parseFloat(document.getElementById('dep_rwy_a_hdg').value);
+    const rwyB = parseFloat(document.getElementById('dep_rwy_b_hdg').value);
+    
+    document.getElementById('dep_rwy_a_wind').value = getWindComponents(rwyA, wDir, wSpd);
+    document.getElementById('dep_rwy_b_wind').value = getWindComponents(rwyB, wDir, wSpd);
+
+    const elev = parseFloat(document.getElementById('dep_elev').value);
+    const altim = parseFloat(document.getElementById('dep_altim').value);
+    const oat = parseFloat(document.getElementById('dep_oat').value);
+    const { pa, da } = getDensityAltitude(elev, altim, oat);
+    document.getElementById('dep_press_alt').value = pa;
+    document.getElementById('dep_density_alt').value = da;
+  }
+
+  function calculateArrival() {
+    const wDir = parseFloat(document.getElementById('arr_wind_dir').value);
+    const wSpd = parseFloat(document.getElementById('arr_wind_spd').value);
+    const rwyA = parseFloat(document.getElementById('arr_rwy_a_hdg').value);
+    const rwyB = parseFloat(document.getElementById('arr_rwy_b_hdg').value);
+    
+    document.getElementById('arr_rwy_a_wind').value = getWindComponents(rwyA, wDir, wSpd);
+    document.getElementById('arr_rwy_b_wind').value = getWindComponents(rwyB, wDir, wSpd);
+
+    const elev = parseFloat(document.getElementById('arr_elev').value);
+    const altim = parseFloat(document.getElementById('arr_altim').value);
+    const oat = parseFloat(document.getElementById('arr_oat').value);
+    const { pa, da } = getDensityAltitude(elev, altim, oat);
+    document.getElementById('arr_press_alt').value = pa;
+    document.getElementById('arr_density_alt').value = da;
+  }
+
+  function updateBuffers() {
+    const calcBuffer = (idIn, idOut) => {
+      const val = parseFloat(document.getElementById(idIn).value);
+      document.getElementById(idOut).value = !isNaN(val) && val > 0 ? `${Math.round(val * 1.5)} ft` : "";
+    };
+    calcBuffer('dep_to_roll', 'dep_to_roll_buf');
+    calcBuffer('dep_50_dist', 'dep_50_dist_buf');
+    calcBuffer('dep_accel_stop', 'dep_accel_stop_buf');
+    calcBuffer('arr_ldg_roll', 'arr_ldg_roll_buf');
+    calcBuffer('arr_50_dist', 'arr_50_dist_buf');
+  }
+</script>
+</body>
+</html>
